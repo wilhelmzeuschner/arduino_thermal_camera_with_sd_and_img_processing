@@ -421,7 +421,7 @@ void save_image() {
 	// Pick a numbered filename, 00 to 99.
 	char filename[15] = "image_##.txt";
 
-	for (uint8_t i = 0; i < 1000; i++) {
+	for (uint8_t i = 0; i < 100; i++) {
 		filename[6] = '0' + i / 10;
 		filename[7] = '0' + i % 10;
 		if (!SD.exists(filename)) {
