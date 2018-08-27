@@ -22,7 +22,7 @@ Free up TFT_RST Pin
   1.0		Deiss         Code modified for Wemos D1 Mini, vertical display, temperature measurement at center, battery measurement
   1.1		Deiss         Exchanged TFT driver for better performance regarding framerate
 
-  2.0		Wilhelm Zeuschner
+  2.0		Wilhelm Zeuschner: Added SD-card support
 
   MCU                       Wemos D1 Mini clone
   Display                   https://www.amazon.com/Wrisky-240x320-Serial-Module-ILI9341/dp/B01KX26JJU/ref=sr_1_10?ie=UTF8&qid=1510373771&sr=8-10&keywords=240+x+320+tft
@@ -383,6 +383,8 @@ void InterpolateCols() {
 	}
 }
 
+//Not perfect yet, screen flickers (propably normal / to be expected) and the refresh rate is significantly lower after saving an image.
+//One reason might be that the SPI Speed is lowered
 void capture_image() {
 	Serial.println("Starting Image Capture!");
 
