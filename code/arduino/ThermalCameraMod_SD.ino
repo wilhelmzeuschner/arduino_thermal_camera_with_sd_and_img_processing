@@ -6,6 +6,7 @@ Free up TFT_RST Pin
 */
 
 #define SAVE70x70
+//SAVE8X8
 
 /*
 
