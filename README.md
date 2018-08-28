@@ -7,7 +7,7 @@ I run my ESP8266 at 160MHz -> higher framerate (select in Arduino Board Options)
 To connect the SD card, you have to share some of the SPI pins with the TFT (MOSI; SCK; [MISO])
 
 SD Slave Select is defined in the code, aswell as the button pin* (which can't be D0 since that pin does not support interrupts).
-
+Schematic: https://easyeda.com/Manuauto/arduino_thermal_camera_with_sd_and_img_processing
 *make sure to add a pull-up resistor
 
 You can choose whether you want to save an 8x8 image or the interpolated 70x70 image.
