@@ -14,8 +14,8 @@ from PIL import Image
 
 top = Tk()
 
-top.minsize(300, 190)
-top.maxsize(300, 190)
+top.minsize(300, 210)
+top.maxsize(300, 210)
 top.title("Thermal Camera Image Processor")
 
 
