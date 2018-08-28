@@ -1,6 +1,7 @@
 //TODO when 2.8" screen arrives: 
 /*
 Free up TFT_RST Pin
+Speed up frametime after Image Caputre [OK]
 
 
 */
@@ -49,6 +50,7 @@ Free up TFT_RST Pin
 #include <Adafruit_AMG88xx.h>       // thermal camera lib
 #include <SD.h>						//SD Lib
 #include <SPI.h>
+#include <Wire.h>
 //#include <Adafruit_ILI9341.h>
 
 #define PIN_INT -1                      //D0 Interrupt from touch for autoscale/scale
@@ -78,6 +80,7 @@ TFT_eSPI Display = TFT_eSPI();
 boolean measure = true;
 uint16_t centerTemp;
 unsigned long tempTime = millis();
+unsigned long tempTime2 = 0;
 unsigned long batteryTime = 1;
 
 // create some text for the keypad butons
@@ -162,6 +165,8 @@ void setup() {
 	pinMode(A0, INPUT);
 
 	// start the display and set the background to black
+	SPI.begin();
+	SPI.setFrequency(80000000L);
 	Display.begin();
 	Display.fillScreen(C_BLACK);
 
@@ -330,6 +335,12 @@ void loop() {
 		drawBattery();
 		batteryTime = millis() + 30000;
 	}
+
+	//Frametime: 260ms before and 360ms after image capture
+	Serial.println("Frametime: ");
+	Serial.println(millis() - tempTime2);
+	tempTime2 = millis();
+
 }
 
 
@@ -387,15 +398,16 @@ void InterpolateCols() {
 //One reason might be that the SPI Speed is lowered
 void capture_image() {
 	Serial.println("Starting Image Capture!");
-
 	activate_sd(1);
 
 	//print_sd_info();
 	save_image();
 
-
-
 	activate_sd(0);
+
+	//Running this command ensures a high framerate after taking an image
+	//If you have problems while saving to the SD you might want to change "SPI_FULL_SPEED" to "SPI_HALF_SPEED" in save_image() or decrease the SPI Clock rate
+	SPI.setFrequency(80000000L);
 }
 
 //Sets variable after button was pressed
@@ -410,10 +422,9 @@ void save_image() {
 
 	Serial.println(F("Initializing SD card..."));
 
-	// see if the card is present and can be initialized:
+	//See if the card is present and can be initialized:
 	if (!SD.begin(sd_ss, SPI_FULL_SPEED)) {
 		Serial.println(F("  SD card failed, or not present!"));
-		// don't do anything more:
 	}
 
 	Serial.println(F("  SD card initialized."));
@@ -435,341 +446,335 @@ void save_image() {
 		Serial.print(F("Couldn't create "));
 		Serial.println(filename);
 
-		// If the file can't be created for some reason this leaves the LED on
-		//   so I know there is a problem
 	}
 	else {
 		Serial.print(F("Writing to "));
 		Serial.println(filename);
 
-		// GPS Visualizer requires a header to identify the CSV fields.
-		// If you are saving other data or don't need this, simply remove/change it
-		//logfile.println( F("latitude,longitude,time,loggingTime") );
-		//image_file.println(F("Image data 8x8:"));
-
 
 		//Save 8x8 Image to SD Card
-#ifdef SAVE8X8
+		#ifdef SAVE8X8
 		for (int i = 63; i >= 0; i--) {
 			image_file.print(pixels[i]);
-			image_file.print(',');
+
 			if (i == 8 || i == 16 || i == 24 || i == 32 || i == 40 || i == 48 || i == 56) {
 				image_file.println();
 			}
-		}
-		image_file.println();
-		image_file.close();
-#endif
+			else {
+				image_file.print(',');
+			}
+			image_file.println();
+			image_file.close();
+		#endif
 
 		//Save interpolated image
 		//			  row  col	
 		//float HDTemp[80][80]; //BUT ONLY 70x70?
 
-#ifdef SAVE70x70
+		#ifdef SAVE70x70
 		for (int row_counter = 0; row_counter < 70; row_counter++) {
-			for (int i = 69; i >= 0; i--) {
-				//image_file.print(map(GetColor(HDTemp[row_counter][i]), 0, 65536, 0, 256));
-				image_file.print(GetColor(HDTemp[row_counter][i]));
-				if (i != 0) {
+			for (int column_counter = 69; column_counter >= 0; column_counter--) {
+				image_file.print(GetColor(HDTemp[row_counter][column_counter]));
+				if (column_counter != 0) {
 					image_file.print(',');
-				}				
+				}
 			}
 			image_file.println();
 		}
 
 		image_file.println();
 		image_file.close();
-#endif
+		#endif
 
 	}
 }
 
-// function to display the results
-void DisplayGradient() {
+	// function to display the results
+	void DisplayGradient() {
 
-	// rip through 70 rows
-	for (row = 0; row < 70; row++) {
-
-		// fast way to draw a non-flicker grid--just make every 10 pixels 2x2 as opposed to 3x3
-		// drawing lines after the grid will just flicker too much
-		if (ShowGrid < 0) {
-			BoxWidth = 3;
-		}
-		else {
-			if ((row % 10 == 9)) {
-				BoxWidth = 2;
-			}
-			else {
-				BoxWidth = 3;
-			}
-		}
-		// then rip through each 70 cols
-		for (col = 0; col < 70; col++) {
+		// rip through 70 rows
+		for (row = 0; row < 70; row++) {
 
 			// fast way to draw a non-flicker grid--just make every 10 pixels 2x2 as opposed to 3x3
+			// drawing lines after the grid will just flicker too much
 			if (ShowGrid < 0) {
-				BoxHeight = 3;
+				BoxWidth = 3;
 			}
 			else {
-				if ((col % 10 == 9)) {
-					BoxHeight = 2;
+				if ((row % 10 == 9)) {
+					BoxWidth = 2;
 				}
 				else {
-					BoxHeight = 3;
+					BoxWidth = 3;
 				}
 			}
-			// finally we can draw each the 70 x 70 points, note the call to get interpolated color
-			Display.fillRect((row * 3) + 15, (col * 3) + 15, BoxWidth, BoxHeight, GetColor(HDTemp[row][col]));
+			// then rip through each 70 cols
+			for (col = 0; col < 70; col++) {
 
-			if (measure == true && row == 36 && col == 36) {
-				drawMeasurement();  //Draw after center pixels to reduce flickering
+				// fast way to draw a non-flicker grid--just make every 10 pixels 2x2 as opposed to 3x3
+				if (ShowGrid < 0) {
+					BoxHeight = 3;
+				}
+				else {
+					if ((col % 10 == 9)) {
+						BoxHeight = 2;
+					}
+					else {
+						BoxHeight = 3;
+					}
+				}
+				// finally we can draw each the 70 x 70 points, note the call to get interpolated color
+				Display.fillRect((row * 3) + 15, (col * 3) + 15, BoxWidth, BoxHeight, GetColor(HDTemp[row][col]));
+
+				if (measure == true && row == 36 && col == 36) {
+					drawMeasurement();  //Draw after center pixels to reduce flickering
+				}
 			}
 		}
+
 	}
 
-}
+	// my fast yet effective color interpolation routine
+	uint16_t GetColor(float val) {
 
-// my fast yet effective color interpolation routine
-uint16_t GetColor(float val) {
+		/*
+		  pass in value and figure out R G B
+		  several published ways to do this I basically graphed R G B and developed simple linear equations
+		  again a 5-6-5 color display will not need accurate temp to R G B color calculation
 
-	/*
-	  pass in value and figure out R G B
-	  several published ways to do this I basically graphed R G B and developed simple linear equations
-	  again a 5-6-5 color display will not need accurate temp to R G B color calculation
+		  equations based on
+		  http://web-tech.ga-usa.com/2012/05/creating-a-custom-hot-to-cold-temperature-color-gradient-for-use-with-rrdtool/index.html
 
-	  equations based on
-	  http://web-tech.ga-usa.com/2012/05/creating-a-custom-hot-to-cold-temperature-color-gradient-for-use-with-rrdtool/index.html
+		*/
 
-	*/
+		red = constrain(255.0 / (c - b) * val - ((b * 255.0) / (c - b)), 0, 255);
 
-	red = constrain(255.0 / (c - b) * val - ((b * 255.0) / (c - b)), 0, 255);
-
-	if ((val > MinTemp) & (val < a)) {
-		green = constrain(255.0 / (a - MinTemp) * val - (255.0 * MinTemp) / (a - MinTemp), 0, 255);
-	}
-	else if ((val >= a) & (val <= c)) {
-		green = 255;
-	}
-	else if (val > c) {
-		green = constrain(255.0 / (c - d) * val - (d * 255.0) / (c - d), 0, 255);
-	}
-	else if ((val > d) | (val < a)) {
-		green = 0;
-	}
-
-	if (val <= b) {
-		blue = constrain(255.0 / (a - b) * val - (255.0 * b) / (a - b), 0, 255);
-	}
-	else if ((val > b) & (val <= d)) {
-		blue = 0;
-	}
-	else if (val > d) {
-		blue = constrain(240.0 / (MaxTemp - d) * val - (d * 240.0) / (MaxTemp - d), 0, 240);
-	}
-
-	// use the displays color mapping function to get 5-6-5 color palet (R=5 bits, G=6 bits, B-5 bits)
-	return Display.color565(red, green, blue);
-
-}
-
-// function to automatically set the max / min scale based on adding an offset to the average temp from the 8 x 8 array
-// you could also try setting max and min based on the actual max min
-void SetTempScale() {
-
-	if (false) { //DefaultTemp < 0) {
-		MinTemp = 25;
-		MaxTemp = 35;
-		Getabcd();
-		DrawLegend();
-	}
-	else {
-		MinTemp = 255;
-		MaxTemp = 0;
-
-		for (i = 0; i < 64; i++) {
-
-			MinTemp = min(MinTemp, pixels[i]);
-			MaxTemp = max(MaxTemp, pixels[i]);
+		if ((val > MinTemp) & (val < a)) {
+			green = constrain(255.0 / (a - MinTemp) * val - (255.0 * MinTemp) / (a - MinTemp), 0, 255);
+		}
+		else if ((val >= a) & (val <= c)) {
+			green = 255;
+		}
+		else if (val > c) {
+			green = constrain(255.0 / (c - d) * val - (d * 255.0) / (c - d), 0, 255);
+		}
+		else if ((val > d) | (val < a)) {
+			green = 0;
 		}
 
-		MaxTemp = MaxTemp + 5.0;
-		MinTemp = MinTemp + 3.0;
-		Getabcd();
-		DrawLegend();
+		if (val <= b) {
+			blue = constrain(255.0 / (a - b) * val - (255.0 * b) / (a - b), 0, 255);
+		}
+		else if ((val > b) & (val <= d)) {
+			blue = 0;
+		}
+		else if (val > d) {
+			blue = constrain(240.0 / (MaxTemp - d) * val - (d * 240.0) / (MaxTemp - d), 0, 240);
+		}
+
+		// use the displays color mapping function to get 5-6-5 color palet (R=5 bits, G=6 bits, B-5 bits)
+		return Display.color565(red, green, blue);
+
 	}
 
-}
+	// function to automatically set the max / min scale based on adding an offset to the average temp from the 8 x 8 array
+	// you could also try setting max and min based on the actual max min
+	void SetTempScale() {
 
-// function to get the cutoff points in the temp vs RGB graph
-void Getabcd() {
+		if (false) { //DefaultTemp < 0) {
+			MinTemp = 25;
+			MaxTemp = 35;
+			Getabcd();
+			DrawLegend();
+		}
+		else {
+			MinTemp = 255;
+			MaxTemp = 0;
 
-	a = MinTemp + (MaxTemp - MinTemp) * 0.2121;
-	b = MinTemp + (MaxTemp - MinTemp) * 0.3182;
-	c = MinTemp + (MaxTemp - MinTemp) * 0.4242;
-	d = MinTemp + (MaxTemp - MinTemp) * 0.8182;
+			for (i = 0; i < 64; i++) {
 
-}
+				MinTemp = min(MinTemp, pixels[i]);
+				MaxTemp = max(MaxTemp, pixels[i]);
+			}
 
-// function to handle screen touches
-//void ProcessTouch() {
-//
-//  Touch.read();
-//
-//  x = Touch.getX();
-//  y = Touch.getY();
+			MaxTemp = MaxTemp + 5.0;
+			MinTemp = MinTemp + 3.0;
+			Getabcd();
+			DrawLegend();
+		}
 
-// yea i know better to have buttons
-//  if (x > 200) {
-//    if (y < 80) {
-//      KeyPad(MaxTemp);
-//    }
-//    else if (y > 160) {
-//      KeyPad(MinTemp);
-//    }
-//    else {
-//      DefaultTemp = DefaultTemp * -1;
-//      SetTempScale();
-//    }
-//  }
-
-//  else if (x <= 200) {
-// toggle grid
-//    ShowGrid = ShowGrid * -1;
-//    if (ShowGrid > 0) {
-//      Display.fillRect(15, 15, 210, 210, C_BLACK);
-//    }
-//  }
-//}
-
-// function to draw a cute little legend
-void DrawLegend() {
-
-	// my cute little color legend with max and min text
-	j = 0;
-
-	float inc = (MaxTemp - MinTemp) / 220.0;
-
-	for (ii = MinTemp; ii < MaxTemp; ii += inc) {
-		//    Display.drawFastHLine(10, 255 - j++, 30, GetColor(ii));
-		Display.drawFastVLine(10 + j++, 255, 30, GetColor(ii));
 	}
 
-	Display.setTextSize(2);
-	Display.setCursor(10, 235);
-	Display.setTextColor(C_WHITE, C_BLACK);
-	sprintf(buf, "%2d/%2d", MinTemp, (int)(MinTemp * 1.8) + 32);
-	//  Display.fillRect(233, 15, 94, 22, C_BLACK);
-	//  Display.setFont(Arial_14);
-	Display.print(buf);
+	// function to get the cutoff points in the temp vs RGB graph
+	void Getabcd() {
 
-	Display.setTextSize(2);
-	// Display.setFont(Arial_24_Bold);
-	Display.setCursor(170, 235);
-	Display.setTextColor(C_WHITE, C_BLACK);
-	sprintf(buf, "%2d/%2d", MaxTemp, (int)(MaxTemp * 1.8) + 32);
-	//  Display.fillRect(233, 215, 94, 55, C_BLACK);
-	//  Display.setFont(Arial_14);
-	Display.print(buf);
+		a = MinTemp + (MaxTemp - MinTemp) * 0.2121;
+		b = MinTemp + (MaxTemp - MinTemp) * 0.3182;
+		c = MinTemp + (MaxTemp - MinTemp) * 0.4242;
+		d = MinTemp + (MaxTemp - MinTemp) * 0.8182;
 
-
-}
-
-// Draw a circle + measured value
-void drawMeasurement() {
-
-	// Mark center measurement
-	Display.drawCircle(120, 120, 3, TFT_WHITE);
-
-	// Measure and print center temperature
-	centerTemp = pixels[27];
-	Display.setCursor(10, 300);
-	Display.setTextColor(TFT_WHITE, TFT_BLACK);
-	Display.setTextSize(2);
-	sprintf(buf, "%s:%2d", "Temp", centerTemp);
-	Display.print(buf);
-}
-
-int measureBattery() {
-	uint16_t adcValue = analogRead(A0);
-	int volt = adcValue / 102.3 * 4.5;// Using 130kOhm resistor
-	return volt;
-}
-
-void activate_sd(bool state) {		//1 - SD active (low)
-	digitalWrite(sd_ss, !state);
-}
-
-// Draw battery symbol
-void drawBattery() {
-	int volt = measureBattery() - 32; // range from 3.2V - 4.2V
-	volt = max(volt, 1);
-	volt = min(volt, 10);
-
-	// draw battery
-	Display.drawRect(198, 304, 30, 10, C_WHITE);
-	Display.fillRect(227, 306, 3, 6, C_WHITE);
-	Display.fillRect(199, 305, 28, 8, C_BLACK);
-	if (volt > 3)Display.fillRect(199, 305, volt * 3 - 2, 8, C_GREEN);
-	else Display.fillRect(199, 305, volt * 3 - 2, 8, C_RED);
-}
-
-void print_sd_info() {
-	if (!card.init(SPI_HALF_SPEED, sd_ss)) {
-		Serial.println("initialization failed. Things to check:");
-		Serial.println("* is a card inserted?");
-		Serial.println("* is your wiring correct?");
-		Serial.println("* did you change the chipSelect pin to match your shield or module?");
-		return;
 	}
-	else {
-		Serial.println("Wiring is correct and a card is present.");
+	// function to draw a cute little legend
+	void DrawLegend() {
+
+		// my cute little color legend with max and min text
+		j = 0;
+
+		float inc = (MaxTemp - MinTemp) / 220.0;
+
+		for (ii = MinTemp; ii < MaxTemp; ii += inc) {
+			//    Display.drawFastHLine(10, 255 - j++, 30, GetColor(ii));
+			Display.drawFastVLine(10 + j++, 255, 30, GetColor(ii));
+		}
+
+		Display.setTextSize(2);
+		Display.setCursor(10, 235);
+		Display.setTextColor(C_WHITE, C_BLACK);
+		sprintf(buf, "%2d/%2d", MinTemp, (int)(MinTemp * 1.8) + 32);
+		//  Display.fillRect(233, 15, 94, 22, C_BLACK);
+		//  Display.setFont(Arial_14);
+		Display.print(buf);
+
+		Display.setTextSize(2);
+		// Display.setFont(Arial_24_Bold);
+		Display.setCursor(170, 235);
+		Display.setTextColor(C_WHITE, C_BLACK);
+		sprintf(buf, "%2d/%2d", MaxTemp, (int)(MaxTemp * 1.8) + 32);
+		//  Display.fillRect(233, 215, 94, 55, C_BLACK);
+		//  Display.setFont(Arial_14);
+		Display.print(buf);
+
+
 	}
 
-	// print the type of card
-	Serial.print("\nCard type: ");
-	switch (card.type()) {
-	case SD_CARD_TYPE_SD1:
-		Serial.println("SD1");
-		break;
-	case SD_CARD_TYPE_SD2:
-		Serial.println("SD2");
-		break;
-	case SD_CARD_TYPE_SDHC:
-		Serial.println("SDHC");
-		break;
-	default:
-		Serial.println("Unknown");
+	// Draw a circle + measured value
+	void drawMeasurement() {
+
+		// Mark center measurement
+		Display.drawCircle(120, 120, 3, TFT_WHITE);
+
+		// Measure and print center temperature
+		centerTemp = pixels[27];
+		Display.setCursor(10, 300);
+		Display.setTextColor(TFT_WHITE, TFT_BLACK);
+		Display.setTextSize(2);
+		sprintf(buf, "%s:%2d", "Temp", centerTemp);
+		Display.print(buf);
 	}
 
-	// Now we will try to open the 'volume'/'partition' - it should be FAT16 or FAT32
-	if (!volume.init(card)) {
-		Serial.println("Could not find FAT16/FAT32 partition.\nMake sure you've formatted the card");
-		return;
+	int measureBattery() {
+		uint16_t adcValue = analogRead(A0);
+		int volt = adcValue / 102.3 * 4.5;// Using 130kOhm resistor
+		return volt;
 	}
 
+	void activate_sd(bool state) {		//1 - SD active (SS pin is low), TFT_CS has to be set to the opposite
+		digitalWrite(sd_ss, !state);
+		digitalWrite(TFT_CS, state);
+	}
 
-	// print the type and size of the first FAT-type volume
-	uint32_t volumesize;
-	Serial.print("\nVolume type is FAT");
-	Serial.println(volume.fatType(), DEC);
-	Serial.println();
+	// Draw battery symbol
+	void drawBattery() {
+		int volt = measureBattery() - 32; // range from 3.2V - 4.2V
+		volt = max(volt, 1);
+		volt = min(volt, 10);
 
-	volumesize = volume.blocksPerCluster();    // clusters are collections of blocks
-	volumesize *= volume.clusterCount();       // we'll have a lot of clusters
-	volumesize *= 512;                            // SD card blocks are always 512 bytes
-	Serial.print("Volume size (bytes): ");
-	Serial.println(volumesize);
-	Serial.print("Volume size (Kbytes): ");
-	volumesize /= 1024;
-	Serial.println(volumesize);
-	Serial.print("Volume size (Mbytes): ");
-	volumesize /= 1024;
-	Serial.println(volumesize);
+		// draw battery
+		Display.drawRect(198, 304, 30, 10, C_WHITE);
+		Display.fillRect(227, 306, 3, 6, C_WHITE);
+		Display.fillRect(199, 305, 28, 8, C_BLACK);
+		if (volt > 3)Display.fillRect(199, 305, volt * 3 - 2, 8, C_GREEN);
+		else Display.fillRect(199, 305, volt * 3 - 2, 8, C_RED);
+	}
+
+	void print_sd_info() {
+		if (!card.init(SPI_FULL_SPEED, sd_ss)) {
+			Serial.println("initialization failed. Things to check:");
+			Serial.println("* is a card inserted?");
+			Serial.println("* is your wiring correct?");
+			Serial.println("* did you change the chipSelect pin to match your shield or module?");
+			return;
+		}
+		else {
+			Serial.println("Wiring is correct and a card is present.");
+		}
+
+		// print the type of card
+		Serial.print("\nCard type: ");
+		switch (card.type()) {
+		case SD_CARD_TYPE_SD1:
+			Serial.println("SD1");
+			break;
+		case SD_CARD_TYPE_SD2:
+			Serial.println("SD2");
+			break;
+		case SD_CARD_TYPE_SDHC:
+			Serial.println("SDHC");
+			break;
+		default:
+			Serial.println("Unknown");
+		}
+
+		// Now we will try to open the 'volume'/'partition' - it should be FAT16 or FAT32
+		if (!volume.init(card)) {
+			Serial.println("Could not find FAT16/FAT32 partition.\nMake sure you've formatted the card");
+			return;
+		}
 
 
-	Serial.println("\nFiles found on the card (name, date and size in bytes): ");
-	root.openRoot(volume);
+		// print the type and size of the first FAT-type volume
+		uint32_t volumesize;
+		Serial.print("\nVolume type is FAT");
+		Serial.println(volume.fatType(), DEC);
+		Serial.println();
 
-	// list all files in the card with date and size
-	root.ls(LS_R | LS_DATE | LS_SIZE);
-}
+		volumesize = volume.blocksPerCluster();    // clusters are collections of blocks
+		volumesize *= volume.clusterCount();       // we'll have a lot of clusters
+		volumesize *= 512;                            // SD card blocks are always 512 bytes
+		Serial.print("Volume size (bytes): ");
+		Serial.println(volumesize);
+		Serial.print("Volume size (Kbytes): ");
+		volumesize /= 1024;
+		Serial.println(volumesize);
+		Serial.print("Volume size (Mbytes): ");
+		volumesize /= 1024;
+		Serial.println(volumesize);
+
+
+		Serial.println("\nFiles found on the card (name, date and size in bytes): ");
+		root.openRoot(volume);
+
+		// list all files in the card with date and size
+		root.ls(LS_R | LS_DATE | LS_SIZE);
+	}
+
+	// function to handle screen touches
+	//void ProcessTouch() {
+	//
+	//  Touch.read();
+	//
+	//  x = Touch.getX();
+	//  y = Touch.getY();
+
+	// yea i know better to have buttons
+	//  if (x > 200) {
+	//    if (y < 80) {
+	//      KeyPad(MaxTemp);
+	//    }
+	//    else if (y > 160) {
+	//      KeyPad(MinTemp);
+	//    }
+	//    else {
+	//      DefaultTemp = DefaultTemp * -1;
+	//      SetTempScale();
+	//    }
+	//  }
+
+	//  else if (x <= 200) {
+	// toggle grid
+	//    ShowGrid = ShowGrid * -1;
+	//    if (ShowGrid > 0) {
+	//      Display.fillRect(15, 15, 210, 210, C_BLACK);
+	//    }
+	//  }
+	//}
