@@ -1,5 +1,5 @@
 # Thermal Camera with image saving capability
-Original programm and 3D-printed case are from: https://www.thingiverse.com/thing:2799023
+Original program and 3D-printed case are from: https://www.thingiverse.com/thing:2799023
 
 An explanation of what this code does and what to look out for can be found on the Thingiverse page.
 I run my ESP8266 at 160MHz -> higher framerate (select in Arduino Board Options).
