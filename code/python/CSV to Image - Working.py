@@ -70,6 +70,8 @@ def process_image():
                 open_file_bt.configure(state = "disabled")
     else:
         print("No File selected!")
+        info2["fg"] = "red"
+        info2["text"] = "No File selected!"
         open_file_bt.configure(state = "disabled")
         
     if file_selected != 0 and save_selected != 0 :
@@ -108,6 +110,8 @@ def process_image():
                 open_file_bt.configure(state = "disabled")
     elif processed == 0:
         print("No File selected!")
+        info2["fg"] = "red"
+        info2["text"] = "No File selected!"
         open_file_bt.configure(state = "disabled")
 
 def select_file():
@@ -136,7 +140,7 @@ def set_save_path():
     global save_name
     global save_selected
     print("Selecting File")
-    top.savename =  filedialog.asksaveasfilename(initialdir = "F:",title = "Save as",filetypes = (("png files","*.png"), ("jpeg files","*.jpg"),("all files","*.*")))
+    top.savename =  filedialog.asksaveasfilename(initialdir = "F:",title = "Save as",filetypes = (("png files","*.png"), ("jpeg files","*.jpeg"),("all files","*.*")))
     if top.savename != "":
         print (save_name)
         save_name = top.savename
