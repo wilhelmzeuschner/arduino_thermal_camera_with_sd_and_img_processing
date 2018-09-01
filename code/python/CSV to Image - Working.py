@@ -25,10 +25,12 @@ file_name = ""
 save_selected = 0
 save_name = ""
 
+last_save  = ""
+
 def process_image():
     global file_name
     global file_selected
-    global f
+    global last_save
     processed = 0
     if file_selected != 0:
         #If a save file name was not specified
@@ -56,9 +58,10 @@ def process_image():
                         rgb888array[row,col]=r,g,b
 
                 # Save result as PNG
-                Image.fromarray(rgb888array).save(f.name[0:-4] + '.jpeg')
+                Image.fromarray(rgb888array).save(f.name[0:-4] + '.png')
+                last_save = f.name[0:-4] + '.png'
                 info2["fg"] = "black"
-                info2["text"]= str("Saved file to: " + str(f.name[0:-4] + '.jpeg'))
+                info2["text"]= str("Saved file to: " + str(f.name[0:-4] + '.png'))
                 open_file_bt.configure(state = "normal")
             except:
                 print("There was an error while processing, opening or saving the file! Make sure that is has the correct format!")
@@ -95,6 +98,8 @@ def process_image():
             Image.fromarray(rgb888array).save(str(save_name) + '.png')
             info2["fg"] = "black"
             info2["text"]= str("Saved file to: " + str(str(save_name) + '.png'))
+            last_save = str(str(save_name) + '.png')
+            open_file_bt.configure(state = "normal")
 
         except:
                 print("There was an error while processing, opening or saving the file! Make sure that is has the correct format!")
@@ -118,16 +123,20 @@ def select_file():
         file_path.insert(0, str(file_name))
 
 def open_img():
-    global f
+    global last_save
     print("opening file")
-    os.startfile(f.name[0:-4] + '.jpeg')
+    try:
+        os.startfile(last_save)
+    except:
+        info2["fg"] = "red"
+        info2["text"] = "Could not open image!"
 
 
 def set_save_path():
     global save_name
     global save_selected
     print("Selecting File")
-    top.savename =  filedialog.asksaveasfilename(initialdir = "F:",title = "Save as",filetypes = (("jpeg files","*.jpg"),("all files","*.*")))
+    top.savename =  filedialog.asksaveasfilename(initialdir = "F:",title = "Save as",filetypes = (("png files","*.png"), ("jpeg files","*.jpg"),("all files","*.*")))
     if top.savename != "":
         print (save_name)
         save_name = top.savename
