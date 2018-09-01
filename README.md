@@ -18,5 +18,6 @@ I got very useful help from: https://stackoverflow.com/questions/52027382/how-do
 **Some processed images:**
 
 
-![](https://github.com/wilhelmzeuschner/arduino_thermal_camera_with_sd_and_img_processor/blob/master/images/img.png)
 ![](https://github.com/wilhelmzeuschner/arduino_thermal_camera_with_sd_and_img_processor/blob/master/images/thermal_image.png)
+![](https://github.com/wilhelmzeuschner/arduino_thermal_camera_with_sd_and_img_processing/blob/master/images/thermal_image2.png)
+![](https://github.com/wilhelmzeuschner/arduino_thermal_camera_with_sd_and_img_processor/blob/master/images/img.png)
