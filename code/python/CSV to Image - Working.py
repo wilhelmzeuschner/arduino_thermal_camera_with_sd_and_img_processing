@@ -9,13 +9,14 @@ import numpy as np
 from tkinter import *
 from tkinter import filedialog
 from PIL import Image
+import os
 
 
 
 top = Tk()
 
-top.minsize(300, 210)
-top.maxsize(300, 210)
+top.minsize(270, 165)
+top.maxsize(270, 165)
 top.title("Thermal Camera Image Processor")
 
 
@@ -27,8 +28,10 @@ save_name = ""
 def process_image():
     global file_name
     global file_selected
+    global f
     processed = 0
     if file_selected != 0:
+        #If a save file name was not specified
         if save_selected == 0 or save_path.get() == "":
             processed = 1
             # Read 16-bit RGB565 image into array of uint16
@@ -53,12 +56,18 @@ def process_image():
                         rgb888array[row,col]=r,g,b
 
                 # Save result as PNG
-                Image.fromarray(rgb888array).save("thermal_image.png")
-                info2["text"]= str("Saved file to: " + str("thermal_image.png"))
+                Image.fromarray(rgb888array).save(f.name[0:-4] + '.jpeg')
+                info2["fg"] = "black"
+                info2["text"]= str("Saved file to: " + str(f.name[0:-4] + '.jpeg'))
+                open_file_bt.configure(state = "normal")
             except:
                 print("There was an error while processing, opening or saving the file! Make sure that is has the correct format!")
+                info2["fg"] = "red"
+                info2["text"] = "Error while processing, opening or saving the file!"
+                open_file_bt.configure(state = "disabled")
     else:
         print("No File selected!")
+        open_file_bt.configure(state = "disabled")
         
     if file_selected != 0 and save_selected != 0 :
         try:
@@ -84,18 +93,23 @@ def process_image():
 
             # Save result as PNG
             Image.fromarray(rgb888array).save(str(save_name) + '.png')
+            info2["fg"] = "black"
             info2["text"]= str("Saved file to: " + str(str(save_name) + '.png'))
 
         except:
                 print("There was an error while processing, opening or saving the file! Make sure that is has the correct format!")
+                info2["fg"] = "red"
+                info2["text"] = "Error while processing, opening or saving the file!"
+                open_file_bt.configure(state = "disabled")
     elif processed == 0:
         print("No File selected!")
+        open_file_bt.configure(state = "disabled")
 
 def select_file():
     global file_name
     global file_selected
     print("Selecting File")
-    top.filename =  filedialog.askopenfilename(initialdir = "/",title = "Select file",filetypes = (("txt files","*.txt"),("csv files","*.csv*"),("all files","*.*")))
+    top.filename =  filedialog.askopenfilename(initialdir = "F:",title = "Select file",filetypes = (("txt files","*.txt"),("csv files","*.csv*"),("all files","*.*")))
     if top.filename != "":
         print (top.filename)
         file_selected = 1
@@ -103,12 +117,17 @@ def select_file():
         file_path.delete(0, "end")
         file_path.insert(0, str(file_name))
 
+def open_img():
+    global f
+    print("opening file")
+    os.startfile(f.name[0:-4] + '.jpeg')
 
-def set_file():
+
+def set_save_path():
     global save_name
     global save_selected
     print("Selecting File")
-    top.savename =  filedialog.asksaveasfilename(initialdir = "/",title = "Save as",filetypes = (("jpeg files","*.jpg"),("all files","*.*")))
+    top.savename =  filedialog.asksaveasfilename(initialdir = "F:",title = "Save as",filetypes = (("jpeg files","*.jpg"),("all files","*.*")))
     if top.savename != "":
         print (save_name)
         save_name = top.savename
@@ -117,25 +136,31 @@ def set_file():
         save_path.insert(0, str(save_name))
 
 select = Button(top, text= "Select File", command=select_file, background= "green")
-save_to = Button(top, text= "Save as", command=set_file, background= "yellow")
+save_to = Button(top, text= "Save as", command=set_save_path, background= "yellow")
 process = Button(top,text= "Process selected File", command=process_image, background= "orange")
-file_path = Entry(top)
-save_path = Entry(top)
+open_file_bt = Button(top, text= "Open Image", command=open_img, background= "RoyalBlue1")
 
-info = Label(top, text = "If you don't select a path \n where the image should be saved,\n it will be saved in the directory \n where this .py file is run from. \n Previous files that have been saved with \n this method will be overwritten!")
+file_path = Entry(top, width = 30)
+save_path = Entry(top, width = 30)
+
+info = Label(top, text = "If you don't select a path \n where the image should be saved,\n it will be saved in the directory \n where this .py file is run from.")
 info2 = Label(top, text = "")
 
-select.grid(row = 1,column = 1)
-save_to.grid(row = 2,column = 1)
+select.grid(row = 1,column = 1, sticky=E)
+save_to.grid(row = 2,column = 1, sticky=E)
+
+open_file_bt.grid(row = 3,column = 1, sticky=E)
 
 process.grid(row = 3,column = 0)
 
 
-file_path.grid(row= 1, column= 0)
-save_path.grid(row= 2, column= 0)
+file_path.grid(row= 1, column= 0, columnspan = 2, sticky=W)
+save_path.grid(row= 2, column= 0, columnspan = 2, sticky=W)
 
 info.grid(row= 4, column=0)
-info2.grid(row= 5, column=0)
+info2.grid(row= 5, column=0, columnspan = 3, sticky = "W")
 
+
+open_file_bt.configure(state = "disabled")
 
 top.mainloop()
