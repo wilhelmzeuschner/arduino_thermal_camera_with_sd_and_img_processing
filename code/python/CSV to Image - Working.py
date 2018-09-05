@@ -1,5 +1,10 @@
+#Wilhelm Zeuschner
+#Version 2.0
+#05.09.2018
 #!/usr/local/bin/python3
 #https://stackoverflow.com/questions/52027382/how-do-i-convert-a-csv-file-16bit-high-color-to-image-in-python
+
+#If you get errors running this file, make sure to install Python 3 and run these commands in the command prompt or command line (admin mode / sudo)
 #pip install numpy
 #pip install pillow
 
