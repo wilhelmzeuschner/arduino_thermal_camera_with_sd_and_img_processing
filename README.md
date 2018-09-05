@@ -15,7 +15,7 @@ You can choose whether you want to save an 8x8 image or the interpolated 70x70 i
 Sorry for the rather messy python code. It works.
 I got very useful help from: https://stackoverflow.com/questions/52027382/how-do-i-convert-a-csv-file-16bit-high-color-to-image-in-python
 
-*It's quite useful to save the Python file to the directory you want the processed images to be saved to. Additionally, you might want to adjust the default "open file directory", so that it matches the drive letter of your SD Card. You can also choose to run the compiled CSV to Image - Working.exe if you want a slightly better experience (no open console).*
+*It's quite useful to save the Python file to the directory you want the processed images to be saved to. Additionally, you might want to adjust the default "open file directory", so that it matches the drive letter of your SD Card.*
 
 **Some processed images:**
 
