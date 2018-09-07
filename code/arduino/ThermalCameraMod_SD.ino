@@ -394,7 +394,7 @@ void InterpolateCols() {
 	}
 }
 
-//Not perfect yet, screen flickers (propably normal / to be expected) and the refresh rate is significantly lower after saving an image.
+//Not perfect yet, screen flickers (propably normal / to be expected) and the refresh rate is significantly lower after saving an image. This might happen because my particular screen does not have a CS Pin.
 //One reason might be that the SPI Speed is lowered
 void capture_image() {
 	Serial.println("Starting Image Capture!");
