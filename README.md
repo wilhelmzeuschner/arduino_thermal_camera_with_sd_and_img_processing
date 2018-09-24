@@ -17,6 +17,8 @@ I got very useful help from: https://stackoverflow.com/questions/52027382/how-do
 
 *It's quite useful to save the Python file to the directory you want the processed images to be saved to. Additionally, you might want to adjust the default "open file directory", so that it matches the drive letter of your SD Card.*
 
+If you experience problems with your thermal camera rebooting or not even starting up properly (and are sure that it should work, i.e. it works over USB,) add more power supply decoupling! Use multiple small ceramic capacitors and maybe one larger electrolytic capacitor. If that does not help, use another method (step-up / step-down) regulator to supply 5 / 3.3V to the ESP8266. By supplying 5V you sacrifice a little bit of efficiency but you can usually gain a little bit of power supply stability since the 5V is regulated down to 3.3V with a linear regulator on the ESP8266 board. Even if you should't notice any problems immediately, it is gernerally a good idea to add sufficient decoupling. Make sure that the device can enter the OTA-mode without crashing.
+
 **Some processed images:**
 
 
