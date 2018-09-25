@@ -55,18 +55,23 @@ def process_image():
                 for row in range(h):
                     for col in range(w):
                         # Pick up rgb565 value and split into rgb888
-                        rgb565 = rgb565array[row,col]
+                        rgb565 = rgb565array[col,row]
                         r = ((rgb565 >> 11 ) & 0x1f ) << 3
                         g = ((rgb565 >> 5  ) & 0x3f ) << 2
                         b = ((rgb565       ) & 0x1f ) << 3
                         # Populate result array
-                        rgb888array[row,col]=r,g,b
+                        rgb888array[col,row]=r,g,b
 
                 # Save result as PNG
                 Image.fromarray(rgb888array).save(f.name[0:-4] + '.png')
                 last_save = f.name[0:-4] + '.png'
                 info2["fg"] = "black"
                 info2["text"]= str("Saved file to: " + str(f.name[0:-4] + '.png'))
+                #Now rotate the created image by 90 degrees counter-clockwise
+                #This is necessary due to a flaw / the way the image data is saved to the SD card
+                im1 = Image.open(str(f.name[0:-4] + '.png'))
+                im1 = im1.rotate(90)
+                im1.save(str(f.name[0:-4] + '.png'))
                 open_file_bt.configure(state = "normal")
             except:
                 print("There was an error while processing, opening or saving the file! Make sure that is has the correct format!")
@@ -106,6 +111,11 @@ def process_image():
             info2["fg"] = "black"
             info2["text"]= str("Saved file to: " + str(str(save_name) + '.png'))
             last_save = str(str(save_name) + '.png')
+            #Now rotate the created image by 90 degrees counter-clockwise
+            #This is necessary due to a flaw / the way the image data is saved to the SD card
+            im1 = Image.open(str(str(save_name) + '.png'))
+            im1 = im1.rotate(90)
+            im1.save(str(str(save_name) + '.png'))
             open_file_bt.configure(state = "normal")
 
         except:
@@ -133,7 +143,7 @@ def select_file():
 
 def open_img():
     global last_save
-    print("opening file")
+    print("Opening file")
     try:
         os.startfile(last_save)
     except:
