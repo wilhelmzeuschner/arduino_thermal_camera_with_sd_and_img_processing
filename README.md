@@ -25,3 +25,6 @@ If you experience problems with your thermal camera rebooting or not even starti
 ![](https://github.com/wilhelmzeuschner/arduino_thermal_camera_with_sd_and_img_processor/blob/master/images/thermal_image.png)
 ![](https://github.com/wilhelmzeuschner/arduino_thermal_camera_with_sd_and_img_processing/blob/master/images/thermal_image2.png)
 ![](https://github.com/wilhelmzeuschner/arduino_thermal_camera_with_sd_and_img_processor/blob/master/images/img.png)
+![](https://github.com/wilhelmzeuschner/arduino_thermal_camera_with_sd_and_img_processing/blob/master/images/IMAGE_05.png)
+![](https://github.com/wilhelmzeuschner/arduino_thermal_camera_with_sd_and_img_processing/blob/master/images/IMAGE_06.png)
+![](https://github.com/wilhelmzeuschner/arduino_thermal_camera_with_sd_and_img_processing/blob/master/images/IMAGE_07.png)
