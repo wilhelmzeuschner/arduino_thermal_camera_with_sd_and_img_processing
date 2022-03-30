@@ -1,6 +1,12 @@
 # Thermal Camera with image saving capability
 Original program and 3D-printed case are from: https://www.thingiverse.com/thing:2799023
 
+## Update March 2022
+Due to changes in the ESP8266 Arduino Library, you have to downgrade it in order to be able to compile the code.
+That would be V2.4.2: https://github.com/esp8266/Arduino/releases/tag/2.4.2
+
+You can do the downgrade via the built in Boards manager.
+
 An explanation of what this code does and what to look out for can be found on the Thingiverse page.
 I run my ESP8266 at 160MHz -> higher framerate (select in Arduino Board Options).
 
